@@ -9,7 +9,7 @@ import { CompletionItem, Position } from "../../language-services";
 import * as Utils from "./utils";
 
 const LibraryProvider: Utils.SimpleLibraryProvider = new Utils.SimpleLibraryProvider(["Text.NewGuid"]);
-const ExpressionKeywordWhitelist: string[] = [
+const ExpressionKeywords: string[] = [
     PQP.Language.KeywordKind.Each,
     PQP.Language.KeywordKind.Error,
     PQP.Language.KeywordKind.False,
@@ -46,23 +46,12 @@ const AllPrimitiveTypes: string[] = [
 describe("Completion Items (null provider)", () => {
     it("blank document keywords", async () => {
         const result: CompletionItem[] = await Utils.getCompletionItems("|");
-
-        // TODO: uncomment when we have fully context sensitive language constants
-        // expect(result.length).to.equal(10);
-        // result.forEach(item => {
-        //     expect(item.kind).to.equal(CompletionItemKind.Keyword);
-        // });
-
-        // TODO: use equals instead of contains when we have fully context sensitive language constants
-        // Utils.equalsCompletionItemLabels(result, [...ExpressionKeywordWhitelist, PQP.Language.KeywordKind.Section]);
-        Utils.containsCompletionItemLabels(result, [...ExpressionKeywordWhitelist, PQP.Language.KeywordKind.Section]);
+        Utils.equalsCompletionItemLabels(result, [...ExpressionKeywords, PQP.Language.KeywordKind.Section]);
     });
 
     it("simple document", async () => {
         const result: CompletionItem[] = await Utils.getCompletionItems("let a = 1, b = 2, c = 3 in |c");
-        // TODO: use equals instead of contains when we have context sensitive language constants
-        // Utils.equalsCompletionItemLabels(result, [...ExpressionKeywordWhitelist, "a", "b", "c"]);
-        Utils.containsCompletionItemLabels(result, [...ExpressionKeywordWhitelist, "a", "b", "c"]);
+        Utils.equalsCompletionItemLabels(result, [...ExpressionKeywords, "a", "b", "c"]);
     });
 });
 
@@ -73,7 +62,7 @@ describe("Completion Items (Simple provider)", () => {
         });
 
         Utils.containsCompletionItemLabels(result, [
-            ...ExpressionKeywordWhitelist,
+            ...ExpressionKeywords,
             PQP.Language.KeywordKind.Section,
             "Text.NewGuid",
         ]);
@@ -85,7 +74,7 @@ describe("Completion Items (Simple provider)", () => {
         });
 
         Utils.containsCompletionItemLabels(result, [
-            ...ExpressionKeywordWhitelist,
+            ...ExpressionKeywords,
             PQP.Language.KeywordKind.Section,
             "Text.NewGuid",
         ]);
@@ -98,7 +87,7 @@ describe("Completion Items (Simple provider)", () => {
         });
 
         Utils.containsCompletionItemLabels(result, [
-            ...ExpressionKeywordWhitelist,
+            ...ExpressionKeywords,
             PQP.Language.KeywordKind.Section,
             "Text.NewGuid",
         ]);
@@ -145,15 +134,6 @@ describe("Other language constants", () => {
         ]);
     });
 
-    it("let a = 1 is |", async () => {
-        const result: CompletionItem[] = await Utils.getCompletionItems(`let a = 1 is |`);
-
-        Utils.containsCompletionItemLabels(result, [
-            ...AllPrimitiveTypes,
-            PQP.Language.Ast.IdentifierConstantKind.Nullable,
-        ]);
-    });
-
     it("(a, |", async () => {
         const result: CompletionItem[] = await Utils.getCompletionItems(`(a, |`);
 
@@ -164,5 +144,26 @@ describe("Other language constants", () => {
         const result: CompletionItem[] = await Utils.getCompletionItems(`(a, op|`);
 
         Utils.containsCompletionItemLabels(result, [PQP.Language.Ast.IdentifierConstantKind.Optional]);
+    });
+
+    it("section a; abc = |", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems(`section a; abc = |`);
+
+        Utils.containsCompletionItemLabels(result, [...ExpressionKeywords]);
+    });
+
+    it("section a; abc = let a = 1 |", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems(`section a; abc = let a = 1 |`);
+
+        Utils.containsCompletionItemLabels(result, [PQP.Language.Ast.KeywordConstantKind.In]);
+    });
+
+    it("let a = 1 is |", async () => {
+        const result: CompletionItem[] = await Utils.getCompletionItems(`let a = 1 is |`);
+
+        Utils.containsCompletionItemLabels(result, [
+            ...AllPrimitiveTypes,
+            PQP.Language.Ast.IdentifierConstantKind.Nullable,
+        ]);
     });
 });
